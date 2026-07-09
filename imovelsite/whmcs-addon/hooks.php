@@ -585,7 +585,10 @@ add_hook('AfterShoppingCartCheckout', 1, function ($vars) {
         if ($clientId > 0) {
             $client = Capsule::table('tblclients')->where('id', $clientId)->first(['firstname', 'lastname']);
             if ($client) {
-                $clientName = trim($client->firstname . ' ' . $client->lastname);
+                // Sanitiza: remove CR/LF (anti header-injection) e escapa HTML (o e-mail admin é HTML).
+                $rawName    = trim($client->firstname . ' ' . $client->lastname);
+                $rawName    = preg_replace('/[\r\n\t]+/', ' ', $rawName);
+                $clientName = htmlspecialchars($rawName, ENT_QUOTES, 'UTF-8');
             }
         }
 
@@ -603,7 +606,8 @@ add_hook('AfterShoppingCartCheckout', 1, function ($vars) {
         $now = date('Y-m-d H:i:s');
 
         foreach ($domains as $domain) {
-            $domainName = strtolower(trim((string) $domain->domain));
+            // Nome de domínio nunca contém CR/LF; strip por defesa em profundidade (anti header-injection no subject/mail).
+            $domainName = strtolower(trim(preg_replace('/[^a-z0-9.\-]/i', '', (string) $domain->domain)));
             if ($domainName === '' || substr($domainName, -18) === '.<ROOT_DOMAIN>') {
                 continue;
             }

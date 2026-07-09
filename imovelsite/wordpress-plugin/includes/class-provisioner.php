@@ -14,12 +14,22 @@ class Imovelsite_Provisioner {
 	private $wp_cli = '/usr/local/bin/wp';
 	private $php    = '/usr/local/bin/php';
 
+	/**
+	 * Docroot do slug. Valida o slug AQUI (guarda central anti path-traversal):
+	 * qualquer slug inválido retorna '' e nunca resolve para um caminho real,
+	 * então todos os métodos de arquivo (suspend/unsuspend/archive/map_domain)
+	 * ficam protegidos mesmo se chamados por um caminho novo.
+	 */
 	public static function docroot( $slug ) {
+		if ( ! preg_match( self::SLUG_REGEX, (string) $slug ) ) {
+			return '';
+		}
 		return IMOVELSITE_ACCOUNT_HOME . '/' . $slug;
 	}
 
 	public static function site_exists( $slug ) {
-		return file_exists( self::docroot( $slug ) . '/wp-config.php' );
+		$docroot = self::docroot( $slug );
+		return '' !== $docroot && file_exists( $docroot . '/wp-config.php' );
 	}
 
 	/** Executa wp-cli no site do corretor. Retorna [status, output]. */
@@ -92,8 +102,11 @@ class Imovelsite_Provisioner {
 		$url        = 'https://' . $domain;
 		$docroot    = self::docroot( $slug );
 		$title      = $display_name ?: 'Imoveis ' . $slug;
-		// Prefixo de banco exigido pelo cPanel para a conta (sem root/fallback).
-		$db_name    = IMOVELSITE_DB_PREFIX . substr( $slug, 0, 8 );
+		// Nome de banco: prefixo cPanel + 6 chars do slug + 4 de hash. Curto (cabe no
+		// limite de nome de usuário MySQL) E livre de colisão entre slugs parecidos
+		// (ex.: mariafernanda x mariafernandez não colidem mais).
+		$db_slug    = substr( $slug, 0, 6 ) . substr( md5( $slug ), 0, 4 );
+		$db_name    = IMOVELSITE_DB_PREFIX . $db_slug;
 		$db_pass    = wp_generate_password( 20, false );
 		$admin_pass = wp_generate_password( 16, false );
 
