@@ -1,0 +1,32 @@
+{
+    "schema": "1.0",
+    "type": "whmcs-addons",
+    "name": "imovelsite",
+    "license": "proprietary",
+    "category": "utilities",
+    "description": {
+        "name": "ImovelSite",
+        "tagline": "Automação do produto Imovel Site (sites WordPress para corretores)",
+        "long": "Banner explicativo no carrinho, validação do Prefixo do Site, template rico de e-mail de boas-vindas com credenciais de mailbox, retentativas automáticas de provisionamento e fila de domínios próprios para registro manual.",
+        "features": [
+            "Banner no carrinho acima das opções de domínio",
+            "Validação do prefixo (slug) no checkout",
+            "E-mail de boas-vindas em HTML com dados do site e do e-mail profissional",
+            "Dashboard admin com log, reprocessamento e restauração do template",
+            "Fila de domínios próprios aguardando registro manual"
+        ]
+    },
+    "logo": {
+        "filename": ""
+    },
+    "support": {
+        "homepage": "https://imovelsite.com.br",
+        "email": "suporte@webstorage.com.br"
+    },
+    "authors": [
+        {
+            "name": "Webstorage/Fable",
+            "homepage": "https://webstorage.com.br"
+        }
+    ]
+}

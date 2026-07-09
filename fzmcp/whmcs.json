@@ -1,0 +1,30 @@
+{
+  "schema": "1.0",
+  "type": "whmcs-addons",
+  "name": "fzmcp",
+  "version": "1.0.0",
+  "license": "proprietary",
+  "category": "utilities",
+  "description": {
+    "name": "fzWHMCS-MCP-AI",
+    "tagline": "Servidor MCP (Model Context Protocol) para WHMCS, consumido pelo cliente FazAI.",
+    "long": "Expoe acoes da API do WHMCS como ferramentas MCP (tools) atraves de tres transportes: Streamable HTTP, SSE (legado) e stdio. Cada ferramenta possui um nivel de permissao configuravel (desabilitado / informar / informar e agir) armazenado no banco. Ferramentas de escrita ficam bloqueadas ate o operador liberar explicitamente o nivel 'agir'.",
+    "features": [
+      "Servidor MCP JSON-RPC 2.0 completo (initialize, tools/list, tools/call, ping)",
+      "Tres transportes: Streamable HTTP, SSE legado e stdio",
+      "Autenticacao por Bearer token",
+      "Modelo de permissao por ferramenta, com bloqueio de escrita por padrao",
+      "Catalogo com 60+ ferramentas cobrindo administracao e tickets integralmente",
+      "Harness de autoteste offline (selftest.php)"
+    ]
+  },
+  "support": {
+    "support_url": "https://webstorage.net.br"
+  },
+  "authors": [
+    {
+      "name": "Webstorage / FazAI",
+      "homepage": "https://webstorage.net.br"
+    }
+  ]
+}

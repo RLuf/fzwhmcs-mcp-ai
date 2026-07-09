@@ -1,0 +1,18 @@
+# Segredos e credenciais — NUNCA versionar
+*.cred
+*.key
+*.pem
+configuration.php
+wp-config.php
+secrets.sh
+*-secrets*
+
+# Ruído
+*.log
+error_log
+*.bak
+*.bak-*
+*.aposentado-*
+.DS_Store
+node_modules/
+vendor/

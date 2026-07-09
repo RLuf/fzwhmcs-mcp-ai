@@ -1,0 +1,19 @@
+{
+  "schema": "1.0",
+  "type": "whmcs-servers",
+  "name": "imovelsite",
+  "license": "proprietary",
+  "category": "provisioning",
+  "description": {
+    "name": "ImovelSite Provisioner (REST)",
+    "tagline": "Provisionamento de sites de corretor via API REST no RED",
+    "short": "Cria, suspende e arquiva sites WordPress de corretores em red.webstorage.com.br via API REST do plugin imovelsite (HTTP Basic / Application Password).",
+    "long": "Substitui o módulo imovelsiteclone (SSH). Dispara jobs assíncronos de criação de site (POST /sites), acompanha o status por polling, grava domínio/usuário/senha no serviço e registra os dados da caixa de e-mail em mod_imovelsite_log para uso do addon imovelsite."
+  },
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "Webstorage/Fable"
+    }
+  ]
+}
