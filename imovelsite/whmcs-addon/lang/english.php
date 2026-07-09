@@ -11,12 +11,12 @@ if (!defined('WHMCS')) {
 // Cart banner (domain selection step)
 // ---------------------------------------------------------------------------
 $_ADDONLANG['cart_banner_title'] = 'You already get a FREE address and e-mail!';
-$_ADDONLANG['cart_banner_body'] = "When you purchase the ImovelSite plan you automatically get, completely FREE, an address in the format YOUR_NAME.imovelsite.com.br and an exclusive e-mail account in the format YOUR_NAME@imovelsite.com.br. Your ImovelSite account is provisioned INSTANTLY after payment confirmation. Even so, if you ALREADY HAVE your own domain or want to register a new one (e.g. chosenname.com.br), select one of the options below: choose 'Register a new domain' (R\$ 60.00/year), click to check availability and, once available, proceed normally — your new domain will be pointed to your ImovelSite property website.";
+$_ADDONLANG['cart_banner_body'] = "When you purchase the ImovelSite plan you automatically get, completely FREE, an address in the format YOUR_NAME.<ROOT_DOMAIN> and an exclusive e-mail account in the format YOUR_NAME@<ROOT_DOMAIN>. Your ImovelSite account is provisioned INSTANTLY after payment confirmation. Even so, if you ALREADY HAVE your own domain or want to register a new one (e.g. chosenname.com.br), select one of the options below: choose 'Register a new domain' (R\$ 60.00/year), click to check availability and, once available, proceed normally — your new domain will be pointed to your ImovelSite property website.";
 
 // ---------------------------------------------------------------------------
 // Checkout validation (Site Prefix)
 // ---------------------------------------------------------------------------
-$_ADDONLANG['validation_prefix_missing'] = 'Please enter the Site Prefix (your address will be YOUR_NAME.imovelsite.com.br). Go back to the product configuration step and fill in the "Prefixo do Site" field.';
+$_ADDONLANG['validation_prefix_missing'] = 'Please enter the Site Prefix (your address will be YOUR_NAME.<ROOT_DOMAIN>). Go back to the product configuration step and fill in the "Prefixo do Site" field.';
 $_ADDONLANG['validation_prefix_invalid'] = 'Invalid Site Prefix: use only lowercase letters and numbers, 3 to 20 characters, no spaces or accents (e.g. joaoimoveis).';
 $_ADDONLANG['validation_prefix_taken'] = 'The chosen prefix is already in use by another customer. Please choose another Site Prefix.';
 $_ADDONLANG['validation_prefix_duplicate_cart'] = 'You used the same Site Prefix on more than one product in the cart. Choose a different prefix for each site.';

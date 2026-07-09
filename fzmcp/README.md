@@ -53,17 +53,17 @@ fzmcp/
 
 ## 2. Endpoints dos 3 transportes
 
-Instalação de exemplo: `https://webstorage.net.br/financeiro`.
+Instalação de exemplo: `https://<DOMINIO_WHMCS>/financeiro`.
 
 | Transporte | Método | URL / comando |
 |---|---|---|
-| **Streamable HTTP** | `POST` | `https://webstorage.net.br/financeiro/modules/addons/fzmcp/public/mcp.php` |
+| **Streamable HTTP** | `POST` | `https://<DOMINIO_WHMCS>/financeiro/modules/addons/fzmcp/public/mcp.php` |
 | **SSE legado** | `GET` abre o stream; `POST ?session=<id>` entrega mensagens | mesma URL acima |
 | **stdio** | CLI local | `/opt/cpanel/ea-php74/root/usr/bin/php modules/addons/fzmcp/bin/mcp-stdio.php` |
 
 ### Alias recomendado para `/mcp`
 
-Sirva o endpoint em `https://webstorage.net.br/mcp`.
+Sirva o endpoint em `https://<DOMINIO_WHMCS>/mcp`.
 
 **Apache** (`.htaccess` na raiz do domínio, ou vhost):
 
@@ -92,7 +92,7 @@ location = /mcp {
 ```
 MCP_SERVERS=whmcs
 MCP_WHMCS_TRANSPORT=http            # ou sse
-MCP_WHMCS_URL=https://webstorage.net.br/mcp
+MCP_WHMCS_URL=https://<DOMINIO_WHMCS>/mcp
 MCP_WHMCS_AUTH=Bearer:<token>
 ```
 
@@ -153,7 +153,7 @@ testes de argumentos malformados.
 Rode com **ea-php74** (a CLI padrão faz *segfault* com ionCube):
 
 ```bash
-cd /home/webstoragenet/www/financeiro
+cd <CAMINHO_WHMCS>
 /opt/cpanel/ea-php74/root/usr/bin/php modules/addons/fzmcp/bin/selftest.php
 ```
 

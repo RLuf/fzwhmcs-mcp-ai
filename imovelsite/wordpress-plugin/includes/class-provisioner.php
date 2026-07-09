@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Provisionamento local do site do corretor — port do provision-corretor.sh.
- * Roda como o usuario imovelsitecom (UAPI sem --user, wp-cli local). Sem SSH, sem root.
+ * Roda como o usuario <CONTA_CPANEL> (UAPI sem --user, wp-cli local). Sem SSH, sem root.
  */
 class Imovelsite_Provisioner {
 

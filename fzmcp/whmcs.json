@@ -19,12 +19,12 @@
     ]
   },
   "support": {
-    "support_url": "https://webstorage.net.br"
+    "support_url": "https://<DOMINIO_WHMCS>"
   },
   "authors": [
     {
       "name": "Webstorage / FazAI",
-      "homepage": "https://webstorage.net.br"
+      "homepage": "https://<DOMINIO_WHMCS>"
     }
   ]
 }

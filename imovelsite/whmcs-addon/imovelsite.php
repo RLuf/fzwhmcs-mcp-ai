@@ -124,7 +124,7 @@ function imovelsite_activate()
                 'relid' => $pid,
                 'fieldname' => 'Prefixo do Site|prefix',
                 'fieldtype' => 'text',
-                'description' => 'Escolha o endereço do seu site: SEU_NOME.imovelsite.com.br '
+                'description' => 'Escolha o endereço do seu site: SEU_NOME.<ROOT_DOMAIN> '
                     . '(letras minúsculas e números, 3-20 caracteres)',
                 'fieldoptions' => '',
                 'regexpr' => '',
@@ -132,8 +132,9 @@ function imovelsite_activate()
                 'required' => 'on',
                 'showorder' => 'on',
                 'showinvoice' => '',
-                'showdetail' => 'on',
                 'sortorder' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
             ]);
             $summary[] = 'Campo customizado "Prefixo do Site" criado no produto ' . $pid . '.';
         }

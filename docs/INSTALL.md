@@ -155,7 +155,7 @@ INSERT INTO tbladdonmodules (module, setting, value) VALUES
   ('imovelsite', 'product_ids', '89'),                       -- [ADAPTAR] pid do produto
   ('imovelsite', 'enable_cart_banner', 'on'),
   ('imovelsite', 'welcome_email_template_id', '276'),        -- [ADAPTAR] id do template
-  ('imovelsite', 'notify_email_domains', 'admin@webstorage.com.br');  -- [ADAPTAR] avisos de domínio manual
+  ('imovelsite', 'notify_email_domains', 'admin@exemplo.com');  -- [ADAPTAR] avisos de domínio manual
 ```
 A ativação (`imovelsite_activate()`) também cria a tabela `mod_imovelsite_log`, instala o template rico de e-mail (com backup) e cria o custom field — ver 2.5 e 2.6 para os detalhes/armadilhas.
 

@@ -20,13 +20,13 @@
         "filename": ""
     },
     "support": {
-        "homepage": "https://imovelsite.com.br",
-        "email": "suporte@webstorage.com.br"
+        "homepage": "https://<ROOT_DOMAIN>",
+        "email": "suporte@exemplo.com"
     },
     "authors": [
         {
             "name": "Webstorage/Fable",
-            "homepage": "https://webstorage.com.br"
+            "homepage": "https://exemplo.com"
         }
     ]
 }

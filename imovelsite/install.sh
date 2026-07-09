@@ -16,23 +16,23 @@ set -uo pipefail
 # ---------------------------------------------------------------------------
 # Configuração — AJUSTE AQUI
 # ---------------------------------------------------------------------------
-: "${WP_PATH:=/home/imovelsitecom/public_html}"        # docroot do WordPress principal
-: "${WP_ACCOUNT:=imovelsitecom}"                        # usuário cPanel dono do site
+: "${WP_PATH:=/home/<CONTA_CPANEL>/public_html}"        # docroot do WordPress principal
+: "${WP_ACCOUNT:=<CONTA_CPANEL>}"                        # usuário cPanel dono do site
 : "${WP_SERVICE_USER:=whmcs-provisioner}"               # usuário de serviço do WP
-: "${WP_SERVICE_EMAIL:=provisioner@imovelsite.com.br}"
-: "${ROOT_DOMAIN:=imovelsite.com.br}"                   # domínio raiz dos subdomínios
+: "${WP_SERVICE_EMAIL:=provisioner@<ROOT_DOMAIN>}"
+: "${ROOT_DOMAIN:=<ROOT_DOMAIN>}"                   # domínio raiz dos subdomínios
 : "${TEMPLATE_SRC:=/root/imovelsite-template}"          # tema proimovel + painel-corretor.php
-: "${TEMPLATE_DST:=/home/imovelsitecom/imovelsite-template}"
+: "${TEMPLATE_DST:=/home/<CONTA_CPANEL>/imovelsite-template}"
 : "${CF_ZONE:=}"                                        # id da zona Cloudflare
 : "${CF_TOKEN:=}"                                       # token Cloudflare (escopo Zone.DNS)
 : "${SERVER_IP:=}"                                      # IP de destino do registro A
 
-: "${WHMCS_PATH:=/home/webstoragenet/www/financeiro}"   # raiz do WHMCS
-: "${WHMCS_OWNER:=webstoragenet}"                       # usuário dono dos arquivos do WHMCS
+: "${WHMCS_PATH:=<CAMINHO_WHMCS>}"   # raiz do WHMCS
+: "${WHMCS_OWNER:=<USUARIO_WHMCS>}"                       # usuário dono dos arquivos do WHMCS
 : "${PRODUCT_ID:=89}"                                   # produto a migrar
 : "${WELCOME_TPL_ID:=276}"                              # tblemailtemplates.id do boas-vindas
 : "${NOTIFY_EMAIL:=}"                                   # avisos de registro manual de domínio
-: "${API_HOST:=imovelsite.com.br}"                      # hostname onde a API REST responde
+: "${API_HOST:=<ROOT_DOMAIN>}"                      # hostname onde a API REST responde
 : "${CRED_FILE:=/root/imovelsite-red-api.cred}"         # credencial da API (gerada na etapa wordpress)
 
 WP_CLI=${WP_CLI:-/usr/local/bin/wp}

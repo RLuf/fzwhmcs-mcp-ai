@@ -150,4 +150,24 @@ class ApiClient
         }
         return $masked;
     }
+
+    /**
+     * Mascara credenciais dentro de uma STRING JSON crua (resposta da API),
+     * onde sanitize() nao alcanca por nao ser array. Cobre admin_pass, password,
+     * pass, secret, token em qualquer nivel.
+     *
+     * @param string $raw
+     * @return string
+     */
+    public static function redactRaw($raw)
+    {
+        if (!is_string($raw) || $raw === '') {
+            return $raw;
+        }
+        return preg_replace(
+            '/("(?:[a-z_]*pass[a-z_]*|password|secret|token|accesshash)"\s*:\s*)"(?:\\\\.|[^"\\\\])*"/i',
+            '$1"***"',
+            $raw
+        );
+    }
 }

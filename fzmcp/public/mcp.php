@@ -3,9 +3,9 @@
  * fzWHMCS-MCP-AI - Public MCP endpoint (Streamable HTTP + legacy SSE).
  *
  * URL (direct):
- *   https://webstorage.net.br/financeiro/modules/addons/fzmcp/public/mcp.php
+ *   https://<DOMINIO_WHMCS>/financeiro/modules/addons/fzmcp/public/mcp.php
  * URL (aliased, recommended):
- *   https://webstorage.net.br/mcp     (see README for the rewrite rule)
+ *   https://<DOMINIO_WHMCS>/mcp     (see README for the rewrite rule)
  *
  * Transports served here:
  *   - Streamable HTTP : POST JSON-RPC 2.0. Response is JSON, or an SSE event

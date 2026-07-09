@@ -4,8 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Caixa de e-mail SEU_NOME@imovelsite.com.br via UAPI cPanel (conta local, sem --user:
- * o PHP roda como o proprio usuario imovelsitecom).
+ * Caixa de e-mail SEU_NOME@<ROOT_DOMAIN> via UAPI cPanel (conta local, sem --user:
+ * o PHP roda como o proprio usuario <CONTA_CPANEL>).
  */
 class Imovelsite_Mailbox {
 

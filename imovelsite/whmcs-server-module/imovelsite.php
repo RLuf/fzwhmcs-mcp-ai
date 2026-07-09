@@ -4,7 +4,7 @@
  *
  * Substitui modules/servers/imovelsiteclone (SSH). Provisiona sites de corretor
  * chamando a API REST do plugin WordPress "imovelsite" no servidor RED
- * (red.webstorage.com.br), com autenticacao HTTP Basic (Application Password).
+ * (<SERVIDOR_WP>), com autenticacao HTTP Basic (Application Password).
  *
  * Fluxo: POST /sites (job assincrono) -> poll GET /sites/{slug}/status ->
  * grava dominio/usuario/senha no servico (tblhosting) e o JSON da caixa de
@@ -85,7 +85,7 @@ function imovelsite_logCall(array $params, string $action, array $request, array
         'imovelsite',
         $action,
         ApiClient::sanitize($request),
-        $result['raw'] ?? '',
+        ApiClient::redactRaw($result['raw'] ?? ''),
         ApiClient::sanitize($result['body'] ?? []),
         $replaceVars
     );
@@ -159,7 +159,7 @@ function imovelsite_pickAvailableSlug(ApiClient $client, array $params, string $
 
 /**
  * Resolve o slug de um servico ja existente: historico no JobStore,
- * senao primeiro rotulo do dominio (ex.: fulano.imovelsite.com.br -> fulano).
+ * senao primeiro rotulo do dominio (ex.: fulano.<ROOT_DOMAIN> -> fulano).
  */
 function imovelsite_resolveSlug(array $params): string
 {
@@ -288,9 +288,12 @@ function imovelsite_finishCreate(array $params, int $sid, string $slug, ?int $lo
         logModuleCall('imovelsite', 'CreateAccount:writeback', ['serviceid' => $sid], $e->getMessage());
     }
 
-    // Status completo (inclui mailbox) fica no JobStore para os merge fields
-    // de e-mail do addon (EmailPreSend).
-    JobStore::markStatus($logId, 'done', $st);
+    // Persiste apenas o necessario para os merge fields de e-mail (EmailPreSend):
+    // domain, admin_user e os dados da caixa. A senha do WP (admin_pass) NAO fica
+    // em texto puro no log — ja esta cifrada no tblhosting acima.
+    $stForLog = $st;
+    unset($stForLog['admin_pass']);
+    JobStore::markStatus($logId, 'done', $stForLog);
 
     if ($domain !== '') {
         try {

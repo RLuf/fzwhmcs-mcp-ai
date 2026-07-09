@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       ImovelSite Provisioner
- * Plugin URI:        https://www.imovelsite.com.br
+ * Plugin URI:        https://www.<ROOT_DOMAIN>
  * Description:       API REST de provisionamento de sites de corretores (WHMCS -> red). Namespace imovelsite/v1.
  * Version:           1.0.0
  * Requires at least: 5.6

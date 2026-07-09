@@ -12,12 +12,12 @@ if (!defined('WHMCS')) {
 // Banner do carrinho (etapa de escolha de domínio)
 // ---------------------------------------------------------------------------
 $_ADDONLANG['cart_banner_title'] = 'Você já ganha endereço e e-mail GRÁTIS!';
-$_ADDONLANG['cart_banner_body'] = "Ao adquirir o plano ImovelSite você automaticamente já ganha totalmente GRÁTIS o endereço no modelo SEU_NOME.imovelsite.com.br e uma conta de e-mail exclusiva no formato SEU_NOME@imovelsite.com.br. Sua conta no ImovelSite é provisionada INSTANTANEAMENTE após a confirmação do pagamento. Mesmo assim, se você JÁ TEM um domínio próprio ou deseja criar um novo domínio próprio (ex.: nomeescolhido.com.br), selecione uma das opções abaixo: marque 'Registrar um novo domínio' (R\$ 60,00/ano), clique em verificar disponibilidade e, confirmada a disponibilidade, prossiga normalmente — seu novo domínio será direcionado para o seu site de divulgação de imóveis no ImovelSite.";
+$_ADDONLANG['cart_banner_body'] = "Ao adquirir o plano ImovelSite você automaticamente já ganha totalmente GRÁTIS o endereço no modelo SEU_NOME.<ROOT_DOMAIN> e uma conta de e-mail exclusiva no formato SEU_NOME@<ROOT_DOMAIN>. Sua conta no ImovelSite é provisionada INSTANTANEAMENTE após a confirmação do pagamento. Mesmo assim, se você JÁ TEM um domínio próprio ou deseja criar um novo domínio próprio (ex.: nomeescolhido.com.br), selecione uma das opções abaixo: marque 'Registrar um novo domínio' (R\$ 60,00/ano), clique em verificar disponibilidade e, confirmada a disponibilidade, prossiga normalmente — seu novo domínio será direcionado para o seu site de divulgação de imóveis no ImovelSite.";
 
 // ---------------------------------------------------------------------------
 // Validação do checkout (Prefixo do Site)
 // ---------------------------------------------------------------------------
-$_ADDONLANG['validation_prefix_missing'] = 'Informe o Prefixo do Site (o endereço ficará SEU_NOME.imovelsite.com.br). Volte à etapa de configuração do produto e preencha o campo "Prefixo do Site".';
+$_ADDONLANG['validation_prefix_missing'] = 'Informe o Prefixo do Site (o endereço ficará SEU_NOME.<ROOT_DOMAIN>). Volte à etapa de configuração do produto e preencha o campo "Prefixo do Site".';
 $_ADDONLANG['validation_prefix_invalid'] = 'Prefixo do Site inválido: use apenas letras minúsculas e números, de 3 a 20 caracteres, sem espaços ou acentos (ex.: joaoimoveis).';
 $_ADDONLANG['validation_prefix_taken'] = 'O prefixo escolhido já está em uso por outro cliente. Por favor, escolha outro Prefixo do Site.';
 $_ADDONLANG['validation_prefix_duplicate_cart'] = 'Você usou o mesmo Prefixo do Site em mais de um produto do carrinho. Escolha um prefixo diferente para cada site.';

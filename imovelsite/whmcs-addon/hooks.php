@@ -409,7 +409,7 @@ add_hook('ShoppingCartValidateCheckout', 1, function ($vars) {
             $seenSlugs[$slug] = true;
 
             $taken = Capsule::table('tblhosting')
-                ->where('domain', 'like', $slug . '.imovelsite.com.br')
+                ->where('domain', 'like', $slug . '.<ROOT_DOMAIN>')
                 ->whereIn('domainstatus', ['Active', 'Suspended', 'Pending'])
                 ->exists();
             if ($taken) {
@@ -513,11 +513,11 @@ add_hook('EmailPreSend', 1, function ($vars) {
         }
 
         $webmail = isset($mailbox['webmail_url']) ? $mailbox['webmail_url']
-            : (isset($mailbox['webmail']) ? $mailbox['webmail'] : 'https://webmail.imovelsite.com.br');
+            : (isset($mailbox['webmail']) ? $mailbox['webmail'] : 'https://webmail.<ROOT_DOMAIN>');
         $imap = isset($mailbox['imap_host']) ? $mailbox['imap_host']
-            : (isset($mailbox['imap']) ? $mailbox['imap'] : 'mail.imovelsite.com.br');
+            : (isset($mailbox['imap']) ? $mailbox['imap'] : 'mail.<ROOT_DOMAIN>');
         $smtp = isset($mailbox['smtp_host']) ? $mailbox['smtp_host']
-            : (isset($mailbox['smtp']) ? $mailbox['smtp'] : 'mail.imovelsite.com.br');
+            : (isset($mailbox['smtp']) ? $mailbox['smtp'] : 'mail.<ROOT_DOMAIN>');
 
         return [
             'mailbox_address' => (string) $address,
@@ -604,7 +604,7 @@ add_hook('AfterShoppingCartCheckout', 1, function ($vars) {
 
         foreach ($domains as $domain) {
             $domainName = strtolower(trim((string) $domain->domain));
-            if ($domainName === '' || substr($domainName, -18) === '.imovelsite.com.br') {
+            if ($domainName === '' || substr($domainName, -18) === '.<ROOT_DOMAIN>') {
                 continue;
             }
 
