@@ -36,7 +36,7 @@ function fzmcp_config()
 {
     return array(
         'name'        => 'fzWHMCS-MCP-AI',
-        'version'     => '1.0.0',
+        'version'     => '1.0.1',
         'author'      => 'Webstorage / FazAI',
         'language'    => 'portuguese-br',
         'description' => 'Servidor MCP (Model Context Protocol) para WHMCS. '
@@ -56,6 +56,13 @@ function fzmcp_config()
                 'Type'         => 'yesno',
                 'Default'      => 'yes',
                 'Description'  => 'Habilita o endpoint publico (public/mcp.php).',
+            ),
+            'allowed_origins' => array(
+                'FriendlyName' => 'Origens web permitidas',
+                'Type'         => 'text',
+                'Size'         => '60',
+                'Default'      => '',
+                'Description'  => 'Lista separada por virgulas de origens HTTPS. Vazio bloqueia chamadas de navegador; clientes MCP sem Origin continuam permitidos.',
             ),
         ),
     );
@@ -81,16 +88,12 @@ function fzmcp_activate()
 
         fzmcp_seed_tools();
 
-        // Generate a bearer token if none exists.
-        if (Config::get('bearer_token', '') === '') {
-            Config::set('bearer_token', Auth::generateToken());
-        }
-
         return array(
             'status'      => 'success',
             'description' => 'fzWHMCS-MCP-AI ativado. Tabela de permissoes criada e '
                 . count(ToolRegistry::all()) . ' ferramentas registradas. '
-                . 'Defina o Usuario Admin da API e libere as ferramentas de escrita desejadas para o nivel "agir".',
+                . 'Defina o Usuario Admin da API e gere o token Bearer no painel do addon. '
+                . 'Ferramentas de escrita permanecem bloqueadas ate o nivel "agir".',
         );
     } catch (\Throwable $e) {
         return array('status' => 'error', 'description' => 'Falha na ativacao: ' . $e->getMessage());
@@ -124,6 +127,10 @@ function fzmcp_upgrade($vars)
             return;
         }
         fzmcp_seed_tools();
+        $storedToken = Config::get('bearer_token', '');
+        if ($storedToken !== '' && !Auth::isHashedToken($storedToken)) {
+            Config::set('bearer_token', Auth::hashToken($storedToken));
+        }
     } catch (\Throwable $e) {
         // Surface nothing fatal on upgrade.
     }
@@ -172,9 +179,22 @@ function fzmcp_output($vars)
     $modulelink = $vars['modulelink'];
     $notice = '';
     $testResult = null;
+    $generatedToken = null;
 
     // ---- handle POST actions ------------------------------------------------
     $action = isset($_POST['fzmcp_action']) ? $_POST['fzmcp_action'] : '';
+    if ($action !== '') {
+        if (function_exists('check_token')) {
+            check_token('WHMCS.admin.default');
+        } else {
+            $referer = isset($_SERVER['HTTP_REFERER']) ? (string) $_SERVER['HTTP_REFERER'] : '';
+            $host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : '';
+            if ($host === '' || stripos($referer, $host) === false) {
+                $notice = 'notice-error:Requisicao rejeitada pela verificacao de origem.';
+                $action = '';
+            }
+        }
+    }
     if ($action === 'save_perms' && isset($_POST['level']) && is_array($_POST['level'])) {
         $valid = array('disabled', 'read', 'act');
         $count = 0;
@@ -188,8 +208,9 @@ function fzmcp_output($vars)
         }
         $notice = 'notice-success:Permissoes atualizadas (' . $count . ' ferramentas).';
     } elseif ($action === 'regen_token') {
-        Config::set('bearer_token', Auth::generateToken());
-        $notice = 'notice-success:Novo token Bearer gerado.';
+        $generatedToken = Auth::generateToken();
+        Config::set('bearer_token', Auth::hashToken($generatedToken));
+        $notice = 'notice-success:Novo token Bearer gerado. Copie agora: ele nao sera exibido novamente.';
     } elseif ($action === 'test_tool') {
         $toolName = isset($_POST['test_tool_name']) ? $_POST['test_tool_name'] : '';
         $rawArgs  = isset($_POST['test_tool_args']) ? trim($_POST['test_tool_args']) : '';
@@ -208,8 +229,12 @@ function fzmcp_output($vars)
     }
 
     // ---- gather state -------------------------------------------------------
-    $token = Config::get('bearer_token', '(gere um token)');
+    $storedToken = Config::get('bearer_token', '');
+    $tokenDisplay = $generatedToken !== null
+        ? $generatedToken
+        : ($storedToken !== '' ? '<TOKEN_JA_CONFIGURADO>' : '<GERE_UM_TOKEN>');
     $adminUser = Config::get('admin_user', '');
+    $csrfField = function_exists('generate_token') ? generate_token('WHMCS.admin.default') : '';
     $levels = array();
     foreach (Capsule::table(Permissions::TABLE)->get(array('tool_name', 'level')) as $row) {
         $levels[is_array($row) ? $row['tool_name'] : $row->tool_name] = is_array($row) ? $row['level'] : $row->level;
@@ -267,7 +292,7 @@ function fzmcp_output($vars)
 MCP_WHMCS_TRANSPORT=http            # ou sse
 MCP_WHMCS_URL=<?php echo $h($httpUrl); ?>
 
-MCP_WHMCS_AUTH=Bearer:<?php echo $h($token); ?></pre>
+MCP_WHMCS_AUTH=Bearer:<?php echo $h($tokenDisplay); ?></pre>
             <div>
                 <strong>Endpoints dos 3 transportes:</strong>
                 <ul style="margin:6px 0 0 18px;">
@@ -283,8 +308,9 @@ MCP_WHMCS_AUTH=Bearer:<?php echo $h($token); ?></pre>
             </div>
             <div style="margin-top:10px;">
                 <strong>Token Bearer:</strong>
-                <span class="fzmcp-token"><?php echo $h($token); ?></span>
+                <span class="fzmcp-token"><?php echo $h($tokenDisplay); ?></span>
                 <form method="post" action="<?php echo $h($modulelink); ?>" style="display:inline;" onsubmit="return confirm('Gerar um novo token invalida o token atual. Continuar?');">
+                    <?php echo $csrfField; ?>
                     <input type="hidden" name="fzmcp_action" value="regen_token">
                     <button type="submit" class="btn btn-sm btn-warning">Regenerar token</button>
                 </form>
@@ -295,6 +321,7 @@ MCP_WHMCS_AUTH=Bearer:<?php echo $h($token); ?></pre>
         <div class="fzmcp-panel">
             <strong>Testar ferramenta</strong>
             <form method="post" action="<?php echo $h($modulelink); ?>">
+                <?php echo $csrfField; ?>
                 <input type="hidden" name="fzmcp_action" value="test_tool">
                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;">
                     <select name="test_tool_name" class="form-control" style="width:auto;">
@@ -317,6 +344,7 @@ MCP_WHMCS_AUTH=Bearer:<?php echo $h($token); ?></pre>
 
         <!-- Permissoes por ferramenta -->
         <form method="post" action="<?php echo $h($modulelink); ?>">
+            <?php echo $csrfField; ?>
             <input type="hidden" name="fzmcp_action" value="save_perms">
             <div style="margin-bottom:10px;">
                 <button type="submit" class="btn btn-success">Salvar permissoes</button>

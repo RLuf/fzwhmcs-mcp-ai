@@ -1,2 +1,4 @@
-runtime/
+runtime/*
+!runtime/.gitkeep
+!runtime/.htaccess
 *.log

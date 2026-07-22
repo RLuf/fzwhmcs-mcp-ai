@@ -30,22 +30,93 @@ use FzMcp\SessionQueue;
 @set_time_limit(0);
 ignore_user_abort(true);
 
-if (!Bootstrap::loadWhmcs()) {
-    http_response_code(500);
-    header('Content-Type: application/json');
-    echo JsonRpc::encode(JsonRpc::error(null, JsonRpc::INTERNAL_ERROR, 'WHMCS nao pode ser inicializado.'));
-    exit;
+/**
+ * Log estruturado de requisicoes (uma linha JSON por evento) para o monitor.
+ * Arquivo: modules/addons/fzmcp/runtime/mcp.log
+ */
+function fzmcp_reqlog($event, array $extra = array())
+{
+    $dir = dirname(__DIR__) . '/runtime';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0700, true);
+    }
+    @chmod($dir, 0700);
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '-';
+    if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
+        $ip = '-';
+    }
+    $userAgent = isset($_SERVER['HTTP_USER_AGENT']) ? (string) $_SERVER['HTTP_USER_AGENT'] : '-';
+    $userAgent = substr(preg_replace('/[\x00-\x1F\x7F]/', '', $userAgent), 0, 60);
+    $line = array(
+        'ts'     => date('Y-m-d H:i:s'),
+        'event'  => $event,
+        'ip'     => $ip,
+        'method' => isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '-',
+        'ua'     => $userAgent,
+    ) + $extra;
+    $path = $dir . '/mcp.log';
+    if (is_file($path) && filesize($path) >= 5 * 1024 * 1024) {
+        if (is_file($path . '.1')) {
+            @unlink($path . '.1');
+        }
+        @rename($path, $path . '.1');
+        @chmod($path . '.1', 0600);
+    }
+    @file_put_contents($path, json_encode($line, JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
+    @chmod($path, 0600);
+}
+
+/** Parse an exact HTTPS Origin allowlist from the addon setting. */
+function fzmcp_allowed_origins($raw)
+{
+    $out = array();
+    foreach (preg_split('/[\s,]+/', (string) $raw) as $candidate) {
+        $candidate = rtrim(trim($candidate), '/');
+        if ($candidate === '') {
+            continue;
+        }
+        $parts = parse_url($candidate);
+        if (is_array($parts)
+            && strtolower((string) ($parts['scheme'] ?? '')) === 'https'
+            && !empty($parts['host'])
+            && empty($parts['path'])
+            && empty($parts['query'])
+            && empty($parts['fragment'])) {
+            $out[] = $candidate;
+        }
+    }
+    return array_values(array_unique($out));
 }
 
 // ---------------------------------------------------------------------------
 // CORS / preflight
 // ---------------------------------------------------------------------------
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Authorization, Content-Type, Mcp-Session-Id, Accept, Last-Event-ID');
-header('Access-Control-Expose-Headers: Mcp-Session-Id');
-
 $method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'GET';
+$httpEnabled = strtolower(Bootstrap::settingLite('enable_http'));
+if (!in_array($httpEnabled, array('1', 'on', 'yes', 'true'), true)) {
+    http_response_code(503);
+    header('Content-Type: application/json');
+    echo JsonRpc::encode(JsonRpc::error(null, JsonRpc::UNAUTHORIZED, 'Transporte HTTP desabilitado.'));
+    exit;
+}
+
+$origin = isset($_SERVER['HTTP_ORIGIN']) ? rtrim(trim((string) $_SERVER['HTTP_ORIGIN']), '/') : '';
+if ($origin !== '') {
+    $allowedOrigins = fzmcp_allowed_origins(Bootstrap::settingLite('allowed_origins'));
+    if (!in_array($origin, $allowedOrigins, true)) {
+        fzmcp_reqlog('origin_denied');
+        http_response_code(403);
+        header('Content-Type: application/json');
+        echo JsonRpc::encode(JsonRpc::error(null, JsonRpc::UNAUTHORIZED, 'Origem web nao autorizada.'));
+        exit;
+    }
+    header('Access-Control-Allow-Origin: ' . $origin);
+    header('Vary: Origin');
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Access-Control-Allow-Headers: Authorization, Content-Type, Mcp-Session-Id, Accept, Last-Event-ID');
+    header('Access-Control-Expose-Headers: Mcp-Session-Id');
+}
+
 if ($method === 'OPTIONS') {
     http_response_code(204);
     exit;
@@ -70,13 +141,22 @@ if (empty($headers)) {
 // ---------------------------------------------------------------------------
 // Authentication (Bearer)
 // ---------------------------------------------------------------------------
-$configuredToken = Bootstrap::token();
+$configuredToken = Bootstrap::tokenLite();
 $presented = Auth::extractToken($headers);
 if ($configuredToken === '' || !Auth::verify($presented, $configuredToken)) {
+    fzmcp_reqlog('auth_fail', array('presented' => $presented === '' ? 'ausente' : 'invalido'));
     http_response_code(401);
     header('WWW-Authenticate: Bearer realm="fzmcp"');
     header('Content-Type: application/json');
     echo JsonRpc::encode(JsonRpc::error(null, JsonRpc::UNAUTHORIZED, 'Nao autorizado: token Bearer ausente ou invalido.'));
+    exit;
+}
+fzmcp_reqlog('auth_ok');
+
+if (!Bootstrap::loadWhmcs()) {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo JsonRpc::encode(JsonRpc::error(null, JsonRpc::INTERNAL_ERROR, 'WHMCS nao pode ser inicializado.'));
     exit;
 }
 
@@ -144,6 +224,13 @@ if ($method === 'GET') {
 // ---------------------------------------------------------------------------
 if ($method === 'POST') {
     $raw = file_get_contents('php://input');
+    // Log do metodo/tool JSON-RPC (sem vazar argumentos sensiveis).
+    $peek = json_decode($raw, true);
+    if (is_array($peek)) {
+        $rpcMethod = isset($peek['method']) ? $peek['method'] : '?';
+        $toolName = ($rpcMethod === 'tools/call' && isset($peek['params']['name'])) ? $peek['params']['name'] : null;
+        fzmcp_reqlog('rpc', array('rpc' => $rpcMethod, 'tool' => $toolName));
+    }
     $response = $server->handleRaw($raw);
 
     // Legacy SSE delivery: a session was supplied -> push the response onto

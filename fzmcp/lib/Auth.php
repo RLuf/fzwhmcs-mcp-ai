@@ -10,6 +10,8 @@ namespace FzMcp;
  */
 class Auth
 {
+    const HASH_PREFIX = 'sha256:';
+
     /**
      * Extract the presented bearer token from request headers.
      *
@@ -46,7 +48,29 @@ class Auth
         if (!is_string($presented) || $presented === '' || !is_string($configured) || $configured === '') {
             return false;
         }
+        if (self::isHashedToken($configured)) {
+            return hash_equals(
+                substr($configured, strlen(self::HASH_PREFIX)),
+                hash('sha256', $presented)
+            );
+        }
         return hash_equals($configured, $presented);
+    }
+
+    /** Store only a one-way digest of the bearer token. */
+    public static function hashToken($token)
+    {
+        if (!is_string($token) || $token === '') {
+            return '';
+        }
+        return self::HASH_PREFIX . hash('sha256', $token);
+    }
+
+    /** Whether a stored value uses the supported one-way token format. */
+    public static function isHashedToken($stored)
+    {
+        return is_string($stored)
+            && preg_match('/^sha256:[a-f0-9]{64}$/', $stored) === 1;
     }
 
     /**

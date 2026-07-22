@@ -31,6 +31,7 @@ use FzMcp\MockApi;
 use FzMcp\Permissions;
 use FzMcp\ToolRegistry;
 use FzMcp\Config;
+use FzMcp\Auth;
 
 fwrite(STDOUT, "=====================================================================\n");
 fwrite(STDOUT, " fzWHMCS-MCP-AI  -  Offline Self-Test Harness\n");
@@ -59,6 +60,18 @@ fwrite(STDOUT, "----------------------------------------------------------------
 
 $fail = 0;
 $pass = 0;
+
+$sampleToken = Auth::generateToken();
+$storedToken = Auth::hashToken($sampleToken);
+$tokenHashOk = Auth::isHashedToken($storedToken)
+    && Auth::verify($sampleToken, $storedToken)
+    && !Auth::verify($sampleToken . 'x', $storedToken);
+report('bearer token com hash em repouso', $tokenHashOk, 'token correto aceito; token incorreto rejeitado');
+$tokenHashOk ? $pass++ : $fail++;
+
+$legacyTokenOk = Auth::verify($sampleToken, $sampleToken);
+report('compatibilidade de token legado', $legacyTokenOk, 'migracao pode ocorrer sem interromper o cliente');
+$legacyTokenOk ? $pass++ : $fail++;
 
 // ---------------------------------------------------------------------------
 // 1) initialize

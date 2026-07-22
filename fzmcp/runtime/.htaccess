@@ -1,0 +1,9 @@
+# MCP runtime files contain operational metadata and session queues.
+# They must never be served as static web content.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
