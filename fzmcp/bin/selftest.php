@@ -7,9 +7,10 @@
  *
  *   1. initialize                 -> asserts the response shape.
  *   2. tools/list                 -> asserts every tool has a valid schema.
- *   3. tools/call for EVERY tool  -> read tools dispatch; write tools MUST be
- *                                    blocked by the permission gate (default).
- *   4. malformed-args             -> asserts schema validation rejects bad input.
+ *   3. tools/call for EVERY tool  -> permission/schema dispatch against MockApi;
+ *                                    write tools MUST remain blocked by default.
+ *   4. curated live reads         -> a small non-PII set must return success.
+ *   5. malformed-args             -> schema validation rejects bad input.
  *
  * Modes:
  *   live  - WHMCS init.php loaded, real localAPI() used (read tools hit the
@@ -53,6 +54,7 @@ if ($live && function_exists('localAPI')) {
 // Deterministic permission gate: registry defaults (write = bloqueado).
 $perms  = Permissions::defaults();
 $server = new Server($api, $perms);
+$gateServer = new Server(new MockApi(), $perms);
 
 fwrite(STDOUT, " Modo: {$mode}\n");
 fwrite(STDOUT, " Backend: " . $api->mode() . "\n");
@@ -132,14 +134,15 @@ fwrite(STDOUT, sprintf(" %-28s %-11s %-5s %-8s %-6s %s\n", 'TOOL', 'CATEGORIA', 
 fwrite(STDOUT, " " . str_repeat('-', 105) . "\n");
 
 // ---------------------------------------------------------------------------
-// 3) tools/call for EVERY tool
+// 3) tools/call for EVERY tool. Always use MockApi here: this section proves
+// schema/permission dispatch without querying arbitrary live customer data.
 // ---------------------------------------------------------------------------
 $readPass = $readFail = $writePass = $writeFail = 0;
 $byCat = array();
 
 foreach (ToolRegistry::all() as $tool) {
     $args = sampleArgs($tool['inputSchema']);
-    $env  = $server->callTool($tool['name'], $args);
+    $env  = $gateServer->callTool($tool['name'], $args);
     $res  = isset($env['result']) ? $env['result'] : array();
     $isError = !empty($res['isError']);
     $text = '';
@@ -153,7 +156,7 @@ foreach (ToolRegistry::all() as $tool) {
     $byCat[$cat][$tool['rw']]++;
 
     if ($tool['rw'] === ToolRegistry::READ) {
-        // Expect the gate to allow dispatch (not a permission error).
+        // Expect the gate to allow read dispatch against the safe mock backend.
         $blocked = $isError && (strpos($text, 'requer o nivel') !== false || strpos($text, 'desabilitada') !== false);
         $ok = !$blocked;
         $expected = 'dispatch';
@@ -178,10 +181,38 @@ foreach (ToolRegistry::all() as $tool) {
 }
 
 // ---------------------------------------------------------------------------
-// 4) malformed args rejected (read tool, wrong type on required field)
+// 4) curated live reads. These actions require no customer identifier and the
+// response body is deliberately not printed, preventing PII leakage in logs.
 // ---------------------------------------------------------------------------
 fwrite(STDOUT, "\n");
-$bad = $server->callTool('GetEmails', array('clientid' => 'nao-e-inteiro'));
+$liveSmoke = array(
+    'WhmcsDetails'       => array(),
+    'GetCurrencies'      => array(),
+    'GetPaymentMethods'  => array(),
+    'GetOrderStatuses'   => array(),
+    'GetSupportStatuses' => array(),
+    'GetHealthStatus'    => array('fetchStatus' => false),
+);
+$liveReadPass = $liveReadFail = 0;
+foreach ($liveSmoke as $toolName => $args) {
+    $env = $server->callTool($toolName, $args);
+    $res = isset($env['result']) ? $env['result'] : array();
+    $ok = empty($res['isError']);
+    report('leitura segura ' . $toolName, $ok, $ok ? 'backend respondeu success' : 'backend retornou erro');
+    if ($ok) {
+        $pass++;
+        $liveReadPass++;
+    } else {
+        $fail++;
+        $liveReadFail++;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 5) malformed args rejected (read tool, wrong type on required field)
+// ---------------------------------------------------------------------------
+fwrite(STDOUT, "\n");
+$bad = $gateServer->callTool('GetEmails', array('clientid' => 'nao-e-inteiro'));
 $badRes = isset($bad['result']) ? $bad['result'] : array();
 $badOk = !empty($badRes['isError'])
     && isset($badRes['content'][0]['text'])
@@ -191,7 +222,7 @@ report('argumentos malformados rejeitados (GetEmails clientid=string)', $badOk,
 $badOk ? $pass++ : $fail++;
 
 // missing required field
-$bad2 = $server->callTool('GetInvoice', array());
+$bad2 = $gateServer->callTool('GetInvoice', array());
 $bad2Res = isset($bad2['result']) ? $bad2['result'] : array();
 $bad2Ok = !empty($bad2Res['isError'])
     && strpos($bad2Res['content'][0]['text'], 'obrigatoria ausente') !== false;
@@ -218,6 +249,7 @@ fwrite(STDOUT, "----------------------------------------------------------------
 fwrite(STDOUT, sprintf(" Modo backend .............. %s\n", $api->mode()));
 fwrite(STDOUT, sprintf(" Tools de leitura .......... %d (dispatch OK: %d, falha: %d)\n", $totR, $readPass, $readFail));
 fwrite(STDOUT, sprintf(" Tools de escrita .......... %d (bloqueadas OK: %d, falha: %d)\n", $totW, $writePass, $writeFail));
+fwrite(STDOUT, sprintf(" Leituras reais seguras .... %d OK / %d falha\n", $liveReadPass, $liveReadFail));
 fwrite(STDOUT, sprintf(" Checagens totais .......... %d PASS / %d FAIL\n", $pass, $fail));
 fwrite(STDOUT, " Status .................... " . ($fail === 0 ? "TODOS OS TESTES PASSARAM\n" : "HOUVE FALHAS\n"));
 fwrite(STDOUT, "=====================================================================\n");

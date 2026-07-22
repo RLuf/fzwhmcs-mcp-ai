@@ -14,7 +14,7 @@ namespace FzMcp;
 class Server
 {
     const SERVER_NAME    = 'fzWHMCS-MCP-AI';
-    const SERVER_VERSION = '1.0.0';
+    const SERVER_VERSION = '1.0.1';
 
     /** Protocol version we advertise; also accept 2025-06-18 clients. */
     const PROTOCOL_VERSION = '2024-11-05';

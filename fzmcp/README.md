@@ -6,7 +6,7 @@ Expõe ações da API do WHMCS como *tools* MCP, consumidas pelo cliente externo
 
 - WHMCS **8.13.1**, PHP **7.4+**
 - JSON-RPC 2.0, protocolo MCP `2024-11-05` (compatível com `2025-06-18` / `2025-03-26`)
-- **88 tools** cobrindo Clientes, Pedidos, Faturas, Produtos, Domínios,
+- **87 tools** cobrindo Clientes, Pedidos, Faturas, Produtos, Domínios,
   **Tickets/Suporte (cobertura integral)** e **Sistema/Admin (cobertura integral)**
 - Três transportes reais: **Streamable HTTP**, **SSE legado** e **stdio**
 - Autenticação por **Bearer token**
@@ -35,7 +35,7 @@ fzmcp/
 │   ├── ApiInterface.php     # contrato da camada de execução
 │   ├── LocalApi.php         # adaptador de produção -> localAPI()
 │   ├── MockApi.php          # adaptador offline (respostas simuladas)
-│   ├── ToolRegistry.php     # catálogo das 88 tools (ação, categoria, schema, read/write)
+│   ├── ToolRegistry.php     # catálogo das 87 tools (ação, categoria, schema, read/write)
 │   ├── Permissions.php      # gate de permissão por tool (DB-backed)
 │   ├── Auth.php             # Bearer token
 │   ├── Config.php           # leitura/escrita em tbladdonmodules
@@ -120,7 +120,7 @@ Classificação (segue os verbos do WHMCS):
 
 **Padrão de segurança:** na ativação toda tool nasce em `read`. Logo, as **48
 tools de escrita nascem bloqueadas** — nenhuma escrita executa até você mudar a
-tool para **“informar e agir”** no painel. As 40 tools de leitura já ficam
+tool para **“informar e agir”** no painel. As 39 tools de leitura já ficam
 utilizáveis.
 
 O gate é aplicado igualmente nos três transportes e no botão *Testar
@@ -142,12 +142,15 @@ ferramenta* do painel.
 
 ## 6. Autoteste offline (`bin/selftest.php`)
 
-Dirige o servidor em processo, **sem rede e sem conexão MCP**, exatamente como o
-FazAI faria: `initialize` → `tools/list` → `tools/call` em **todas** as tools →
-testes de argumentos malformados.
+Dirige o servidor em processo, **sem conexão MCP**, exatamente como o FazAI
+faria: `initialize` → `tools/list` → `tools/call` em **todas** as tools →
+leituras reais seguras → testes de argumentos malformados.
 
-- Tools de **leitura** são despachadas (contra o WHMCS real, somente leitura).
+- O catálogo completo usa `MockApi` para provar schema, dispatch e permissões
+  sem consultar dados de clientes.
 - Tools de **escrita** são verificadas quanto ao **bloqueio de permissão**.
+- Um conjunto pequeno de leituras sem identificador de cliente é validado no
+  `localAPI` real, sem imprimir o corpo da resposta.
 - Argumentos inválidos/faltantes são rejeitados pelo validador de schema.
 
 Rode com **ea-php74** (a CLI padrão faz *segfault* com ionCube):
@@ -170,7 +173,7 @@ passou.
 1. **Instalar**: copie a pasta `fzmcp/` para `modules/addons/fzmcp/` na
    instalação do WHMCS.
 2. **Ativar**: *Configuração → Addon Modules → fzWHMCS-MCP-AI → Activate*
-   (cria `mod_fzmcp_tools`, semeia as 88 tools, gera o token).
+   (cria `mod_fzmcp_tools`, semeia as 87 tools, gera o token).
 3. **Permissões de acesso** do addon: marque os grupos de admin que podem ver
    o painel.
 4. **Usuário Admin da API**: em *Configurações* do módulo, informe um admin com
@@ -200,7 +203,7 @@ passou.
 
 ## 9. Cobertura de tools
 
-88 tools no total — **40 leitura / 48 escrita**:
+87 tools no total — **39 leitura / 48 escrita**:
 
 | Categoria | Leitura | Escrita |
 |---|---:|---:|
@@ -210,7 +213,7 @@ passou.
 | Produtos | 1 | 8 |
 | Domínios | 3 | 7 |
 | **Tickets** | 8 | 9 |
-| **Sistema/Admin** | 16 | 5 |
+| **Sistema/Admin** | 15 | 5 |
 
 **Não incluído por decisão de segurança/escopo** (fácil de adicionar ao
 `ToolRegistry` se desejado): `DecryptPassword`/`EncryptPassword` e

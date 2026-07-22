@@ -471,13 +471,13 @@ class ToolRegistry
             'inputSchema' => $obj(array(
                 'ignore_dept_assignments' => $bool('Ignorar atribuicoes.'),
             )));
-        $t[] = array('name' => 'GetPredefinedReplies', 'category' => $cat, 'action' => 'GetPredefinedReplies', 'rw' => self::READ,
+        $t[] = array('name' => 'GetPredefinedReplies', 'category' => $cat, 'action' => 'GetTicketPredefinedReplies', 'rw' => self::READ,
             'description' => 'Lista respostas predefinidas de suporte.',
             'inputSchema' => $obj(array(
                 'catid'   => $int('ID da categoria.'),
                 'keyword' => $str('Palavra-chave.'),
             )));
-        $t[] = array('name' => 'GetPredefinedReplyCategories', 'category' => $cat, 'action' => 'GetPredefinedReplyCategories', 'rw' => self::READ,
+        $t[] = array('name' => 'GetPredefinedReplyCategories', 'category' => $cat, 'action' => 'GetTicketPredefinedCats', 'rw' => self::READ,
             'description' => 'Lista categorias de respostas predefinidas.',
             'inputSchema' => $obj(array()));
         $t[] = array('name' => 'OpenTicket', 'category' => $cat, 'action' => 'OpenTicket', 'rw' => self::WRITE,
@@ -628,9 +628,6 @@ class ToolRegistry
             'inputSchema' => $obj(array(
                 'fetchStatus' => $bool('Buscar status/estatisticas de cada servidor.'),
             )));
-        $t[] = array('name' => 'GetProductGroups', 'category' => $cat, 'action' => 'GetProductGroups', 'rw' => self::READ,
-            'description' => 'Lista os grupos de produtos.',
-            'inputSchema' => $obj(array()));
         $t[] = array('name' => 'GetPromotions', 'category' => $cat, 'action' => 'GetPromotions', 'rw' => self::READ,
             'description' => 'Lista as promocoes cadastradas.',
             'inputSchema' => $obj(array('code' => $str('Filtrar por codigo.'))));
