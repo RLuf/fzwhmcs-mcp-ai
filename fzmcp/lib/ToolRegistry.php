@@ -565,11 +565,6 @@ class ToolRegistry
             'inputSchema' => $obj(array(
                 'timezone' => $str('Fuso horario (opcional).'),
             )));
-        $t[] = array('name' => 'GetHealthStatus', 'category' => $cat, 'action' => 'GetHealthStatus', 'rw' => self::READ,
-            'description' => 'Retorna verificacoes de saude do sistema.',
-            'inputSchema' => $obj(array(
-                'fetchStatus' => $bool('Executar as verificacoes de status.'),
-            )));
         $t[] = array('name' => 'GetActivityLog', 'category' => $cat, 'action' => 'GetActivityLog', 'rw' => self::READ,
             'description' => 'Consulta o log de atividades do sistema.',
             'inputSchema' => $obj(array(

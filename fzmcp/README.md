@@ -6,7 +6,7 @@ Expõe ações da API do WHMCS como *tools* MCP, consumidas pelo cliente externo
 
 - WHMCS **8.13.1**, PHP **7.4+**
 - JSON-RPC 2.0, protocolo MCP `2024-11-05` (compatível com `2025-06-18` / `2025-03-26`)
-- **87 tools** cobrindo Clientes, Pedidos, Faturas, Produtos, Domínios,
+- **86 tools** cobrindo Clientes, Pedidos, Faturas, Produtos, Domínios,
   **Tickets/Suporte (cobertura integral)** e **Sistema/Admin (cobertura integral)**
 - Três transportes reais: **Streamable HTTP**, **SSE legado** e **stdio**
 - Autenticação por **Bearer token**
@@ -35,7 +35,7 @@ fzmcp/
 │   ├── ApiInterface.php     # contrato da camada de execução
 │   ├── LocalApi.php         # adaptador de produção -> localAPI()
 │   ├── MockApi.php          # adaptador offline (respostas simuladas)
-│   ├── ToolRegistry.php     # catálogo das 87 tools (ação, categoria, schema, read/write)
+│   ├── ToolRegistry.php     # catálogo das 86 tools (ação, categoria, schema, read/write)
 │   ├── Permissions.php      # gate de permissão por tool (DB-backed)
 │   ├── Auth.php             # Bearer token
 │   ├── Config.php           # leitura/escrita em tbladdonmodules
@@ -120,7 +120,7 @@ Classificação (segue os verbos do WHMCS):
 
 **Padrão de segurança:** na ativação toda tool nasce em `read`. Logo, as **48
 tools de escrita nascem bloqueadas** — nenhuma escrita executa até você mudar a
-tool para **“informar e agir”** no painel. As 39 tools de leitura já ficam
+tool para **“informar e agir”** no painel. As 38 tools de leitura já ficam
 utilizáveis.
 
 O gate é aplicado igualmente nos três transportes e no botão *Testar
@@ -173,7 +173,7 @@ passou.
 1. **Instalar**: copie a pasta `fzmcp/` para `modules/addons/fzmcp/` na
    instalação do WHMCS.
 2. **Ativar**: *Configuração → Addon Modules → fzWHMCS-MCP-AI → Activate*
-   (cria `mod_fzmcp_tools`, semeia as 87 tools, gera o token).
+   (cria `mod_fzmcp_tools`, semeia as 86 tools, gera o token).
 3. **Permissões de acesso** do addon: marque os grupos de admin que podem ver
    o painel.
 4. **Usuário Admin da API**: em *Configurações* do módulo, informe um admin com
@@ -203,7 +203,7 @@ passou.
 
 ## 9. Cobertura de tools
 
-87 tools no total — **39 leitura / 48 escrita**:
+86 tools no total — **38 leitura / 48 escrita**:
 
 | Categoria | Leitura | Escrita |
 |---|---:|---:|
@@ -213,10 +213,12 @@ passou.
 | Produtos | 1 | 8 |
 | Domínios | 3 | 7 |
 | **Tickets** | 8 | 9 |
-| **Sistema/Admin** | 15 | 5 |
+| **Sistema/Admin** | 14 | 5 |
 
 **Não incluído por decisão de segurança/escopo** (fácil de adicionar ao
 `ToolRegistry` se desejado): `DecryptPassword`/`EncryptPassword` e
 `GetClientPassword` (exposição de credenciais); ações de e-mail marketing e
-afiliados; endpoints de KB/downloads. O `tools/list` sempre reflete o catálogo
-atual filtrado pelas permissões.
+afiliados; endpoints de KB/downloads. `GetHealthStatus` também fica fora porque
+o `localAPI` do WHMCS 8.13.1 deste ambiente lança uma exceção interna; a saúde é
+monitorada fora do MCP. O `tools/list` sempre reflete o catálogo atual filtrado
+pelas permissões.

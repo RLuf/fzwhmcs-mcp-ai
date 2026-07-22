@@ -191,7 +191,6 @@ $liveSmoke = array(
     'GetPaymentMethods'  => array(),
     'GetOrderStatuses'   => array(),
     'GetSupportStatuses' => array(),
-    'GetHealthStatus'    => array('fetchStatus' => false),
 );
 $liveReadPass = $liveReadFail = 0;
 foreach ($liveSmoke as $toolName => $args) {
