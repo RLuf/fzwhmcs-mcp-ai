@@ -1,95 +1,124 @@
-# fzWHMCS
+# fzWHMCS MCP AI
 
-Integrações profissionais para **WHMCS 8.x** — provisionamento por API REST autenticada, sem SSH em runtime.
+Servidor MCP integrado ao WHMCS para conectar o FazAI e outros clientes
+compatíveis à operação de billing com autenticação, schemas e permissões por
+ferramenta.
 
-Dois produtos convivem neste repositório:
+> **Estado:** ativo no WHMCS de produção · módulo `fzmcp` · versão `1.0.1` ·
+> ferramentas de escrita bloqueadas por padrão
 
-| Produto | Estado | Descrição |
+## O que este repositório contém
+
+| Caminho | Estado | Responsabilidade |
 |---|---|---|
-| [`imovelsite/`](#imovelsite) | **Em produção** | Provisionamento de sites WordPress de corretores, do carrinho ao e-mail de boas-vindas |
-| [`fzmcp/`](#fzwhmcs-mcp-ai) | Em construção | Servidor MCP expondo a API do WHMCS como ferramentas para agentes de IA |
+| [`fzmcp/`](fzmcp/) | Ativo | Addon WHMCS que implementa MCP por HTTP/SSE/stdio e chama `localAPI()` |
+| [`imovelsite/`](imovelsite/) | Histórico | Primeira geração do provisionador; a fonte produtiva atual é `RLuf/imovelsite-whmcs-module` |
+| [`docs/`](docs/) | Ativo | Instalação, operação, upgrade e diagnóstico |
 
----
+Não implante o provisionador de `imovelsite/` sobre a Plataforma ImovelSite 2.0.
+Ele permanece somente como histórico técnico.
 
-## ImovelSite
+## Arquitetura
 
-Vende um plano no WHMCS e entrega, em minutos e sem intervenção humana, um site WordPress completo para o corretor em `SEU_NOME.<ROOT_DOMAIN>`, com DNS, SSL e caixa de e-mail próprios.
-
-### Arquitetura
-
-```
-WHMCS (servidor de billing)                    WordPress (servidor de sites)
-├── whmcs-addon/            ──── HTTPS ────▶   wordpress-plugin/
-│   banner do carrinho,     Basic Auth com     REST imovelsite/v1
-│   validação do prefixo,   Application        ├── POST /sites        (provisiona, 202 + job)
-│   e-mail de boas-vindas,  Password           ├── GET  /sites/{slug}/status
-│   dashboard, cron         + capability       ├── POST /sites/{slug}/suspend|unsuspend
-│                           dedicada           ├── POST /sites/{slug}/domain
-└── whmcs-server-module/                       ├── DELETE /sites/{slug}?mode=archive
-    CreateAccount, Suspend,                    └── GET  /sites/{slug}/sso
-    Terminate, SSO, retry
+```mermaid
+flowchart LR
+    A[FazAI ou cliente MCP] -->|HTTPS + Bearer| E[fzmcp/public/mcp.php]
+    E --> J[JSON-RPC / MCP]
+    J --> V[Schema + permissão]
+    V -->|leitura liberada| L[WHMCS localAPI]
+    V -->|escrita exige act| L
+    L --> D[(Banco e módulos WHMCS)]
 ```
 
-**Nenhum SSH entre servidores.** O plugin executa localmente (`uapi`, `wp-cli`, API Cloudflare) o que antes era um `shell_exec` remoto — ganhando autenticação, validação, idempotência e log no caminho.
+O endpoint externo autentica com Bearer token. O token bruto é entregue uma vez
+ao cliente; o WHMCS guarda somente seu hash. Dentro do WHMCS, o addon usa
+`localAPI()` com um administrador configurado — não precisa nem deve armazenar
+senha administrativa.
 
-### Componentes
+## Capacidades
 
-- **`imovelsite/whmcs-addon/`** — addon module. Injeta o bloco explicativo no carrinho (só nos produtos configurados, sem editar templates compartilhados), valida o prefixo escolhido pelo cliente, garante o e-mail de boas-vindas correto via `EmailPreSend` + merge fields da caixa de e-mail, enfileira registro manual de domínio, e oferece dashboard admin com retry.
-- **`imovelsite/whmcs-server-module/`** — provisioning module. Fala com o plugin por REST: `CreateAccount` (com `idempotency_key` por serviço e polling do job), `Suspend`/`Unsuspend`/`Terminate`, `TestConnection`, SSO para o `wp-admin`. Serviços legados de outros módulos retornam no-op benigno em vez de erro.
-- **`imovelsite/wordpress-plugin/`** — plugin WordPress. Rotas REST com `permission_callback` obrigatório checando capability própria; fila de jobs idempotente em tabela dedicada; provisionamento executado só em CLI (o `exec()` do PHP web fica desabilitado por segurança); cria subdomínio, banco, WordPress pt-BR, tema, painel do corretor, registro DNS na Cloudflare e caixa de e-mail.
+- MCP Streamable HTTP, SSE legado e stdio;
+- JSON-RPC 2.0 e negociação de protocolo;
+- catálogo estático com schemas de entrada;
+- permissões `disabled`, `read` e `act`;
+- token Bearer com hash em repouso;
+- validação de origem, HTTPS e logs sanitizados;
+- painel administrativo para token, permissões e teste de ferramentas;
+- autoteste offline/live seguro.
 
-### Segurança
+Na versão atual, o catálogo exposto possui 86 ferramentas:
 
-- Autenticação por **Application Password** do WordPress (Basic sobre HTTPS), em usuário de serviço dedicado com capability `imovelsite_provision` — nunca uma conta humana.
-- Segredos vivem em constantes do `wp-config.php` e no banco do WHMCS. **Nada de token, IP ou zona neste repositório.**
-- Senhas mascaradas no Module Log do WHMCS.
-- Provisionamento privilegiado isolado no CLI; a superfície web só enfileira.
+| Tipo | Quantidade | Padrão |
+|---|---:|---|
+| Leitura | 38 | Permitida conforme nível `read` |
+| Escrita | 48 | Bloqueada até o operador selecionar `act` |
 
-### Instalação
+## Início rápido
 
-1. **WordPress (servidor de sites):** copie `imovelsite/wordpress-plugin/` para `wp-content/plugins/imovelsite-provisioner/` e ative. Defina no `wp-config.php`:
-   ```php
-   define( 'IMOVELSITE_CF_TOKEN', '...' );      // token Cloudflare com escopo Zone.DNS
-   define( 'IMOVELSITE_CF_ZONE', '...' );       // id da zona
-   define( 'IMOVELSITE_SERVER_IP', '...' );     // IP de destino do registro A
-   define( 'IMOVELSITE_TEMPLATE_DIR', '...' );  // tema + mu-plugin modelo
-   ```
-   Crie o usuário de serviço e a credencial:
-   ```bash
-   wp user create whmcs-provisioner provisioner@exemplo.com --role=imovelsite_service
-   wp user application-password create whmcs-provisioner whmcs --porcelain
-   ```
-   Se o Apache descartar o header `Authorization`, adicione ao `.htaccess`:
-   ```apache
-   RewriteCond %{HTTP:Authorization} ^(.+)$
-   RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
-   ```
-   E agende o processador da fila (CLI, a cada minuto):
-   ```cron
-   * * * * * wp eval "imovelsite_process_pending();" --path=/caminho/do/wp
-   ```
+### Instalar no WHMCS
 
-2. **WHMCS:** copie `whmcs-addon/` e `whmcs-server-module/` para `modules/addons/imovelsite/` e `modules/servers/imovelsite/`. Ative o addon; cadastre o servidor (hostname = domínio da API, usuário = usuário de serviço, **access hash = Application Password**); aponte o produto para o módulo `imovelsite` com *autosetup = payment*.
+```bash
+cp -a fzmcp /CAMINHO_WHMCS/modules/addons/fzmcp
+```
 
-   O arquivo `_includes-hooks-imovelsite_hooks_loader.php` vai para `includes/hooks/` apenas se a sua instalação não carregar `hooks.php` do addon automaticamente.
+Depois:
 
----
+1. Abra **Configurações → Módulos Addon**.
+2. Ative **fzWHMCS-MCP-AI**.
+3. Libere o grupo administrativo autorizado.
+4. Configure **Usuário Admin da API**, transporte HTTP e origens.
+5. Em **Addons → fzWHMCS-MCP-AI**, gere o token e revise as permissões.
 
-## fzWHMCS-MCP-AI
+### Conectar o FazAI
 
-Servidor **MCP** (Model Context Protocol) expondo as ~161 ações da API do WHMCS como ferramentas utilizáveis por agentes de IA — **operacionais de verdade**: listar, conectar, executar, observar o resultado e reutilizar o contexto.
+```env
+MCP_WHMCS_URL=https://SEU-WHMCS/modules/addons/fzmcp/public/mcp.php
+MCP_WHMCS_AUTH=Bearer:TOKEN_BRUTO_GERADO
+```
 
-Painel administrativo em duas colunas, com permissão por ação:
+O header enviado é:
 
-- **(a) informar/registrar** — somente leitura
-- **(b) informar e agir** — leitura e escrita
-- **desabilitada**
+```http
+Authorization: Bearer TOKEN_BRUTO_GERADO
+```
 
-Backend pela API externa do WHMCS (`identifier`/`secret` + API Roles + IP allowlist).
+`Bearer:` no arquivo de configuração é o formato do FazAI; no protocolo HTTP,
+o separador entre o esquema e o token é um espaço.
 
-Em construção.
+Se o token original foi perdido, gere outro no painel e atualize o cliente. O
+hash armazenado não permite recuperar o token anterior.
 
----
+## Testes
+
+No ambiente WHMCS, use a CLI PHP compatível com sua instalação:
+
+```bash
+cd /CAMINHO_WHMCS/modules/addons/fzmcp
+/CAMINHO/PHP-COMPATIVEL bin/selftest.php
+```
+
+Resultado de referência da versão `1.0.1`: 101 verificações aprovadas, 38
+leituras despachadas e 48 escritas recusadas enquanto não liberadas.
+
+## Documentação
+
+| Documento | Conteúdo |
+|---|---|
+| [Índice](docs/README.md) | Mapa completo da documentação |
+| [Instalação](docs/INSTALL.md) | Requisitos e instalação |
+| [Operação](docs/OPERACAO.md) | Token, permissões, testes e rotina |
+| [Upgrade do WHMCS](docs/WHMCS-UPGRADE.md) | Compatibilidade, migração e rollback |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Diagnóstico por sintoma |
+| [Reinstalação](docs/PROMPT-REINSTALACAO.md) | Procedimento assistido |
+| [Instruções para agentes](AGENTS.md) | Regras de manutenção e segurança |
+
+## Relação com os outros projetos
+
+- `RLuf/imovelsite-whmcs-module`: provisionamento produtivo do produto 177.
+- `RLuf/fzwordpress-mcp-ai`: MCP multi-site dos WordPress.
+- `RLuf/fzwhmcs-ai`: produto MCP mais amplo, com cliente npm e site; não é a
+  fonte da instalação atual sem uma migração homologada.
+- `RLuf/whmcs-addon-template`: base para novos addons comercializáveis.
 
 ## Licença
 

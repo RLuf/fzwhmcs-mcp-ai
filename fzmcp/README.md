@@ -11,7 +11,11 @@ Expõe ações da API do WHMCS como *tools* MCP, consumidas pelo cliente externo
 - Três transportes reais: **Streamable HTTP**, **SSE legado** e **stdio**
 - Autenticação por **Bearer token**
 - **Modelo de permissão por tool** (tabela `mod_fzmcp_tools`): toda tool de
-  **escrita nasce bloqueada** até o operador liberar o nível **“informar e agir”**
+**escrita nasce bloqueada** até o operador liberar o nível **“informar e agir”**
+
+> Fonte da instalação MCP atual. Para atualizar o WHMCS ou o addon, consulte
+> [`../docs/WHMCS-UPGRADE.md`](../docs/WHMCS-UPGRADE.md) e
+> [`../AGENTS.md`](../AGENTS.md). Não desative/reative como método de upgrade.
 
 ---
 
